@@ -2,7 +2,7 @@
 <!-- $Id: consoleadmin.jsp,v 1.2 2009/03/11 18:05:35 cpress Exp $ -->
 <jsp:useBean 
 	id="mem" 
-	class="edu.uic.java.monitor.memory.web.Facade"
+	class="org.press.Facade"
 	scope="request" />
 <jsp:setProperty name="mem" property="*" />
 

@@ -27,21 +27,22 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Date;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
 
 
-/**  
- * @see 
+/**
+ * @see
  * <pre>
  * 		http://java.sun.com/javase/technologies/hotspot/gc/gc_tuning_6.html
  * 		http://java.sun.com/javase/6/docs/api/javax/management/Notification.html
- * 		http://java.sun.com/javase/6/docs/api/javax/management/NotificationListener.html 
- * 		http://java.sun.com/javase/6/docs/api/java/lang/management/MemoryPoolMXBean.html 
- * 		http://www.theserverside.com/news/thread.tss?thread_id=27481  
+ * 		http://java.sun.com/javase/6/docs/api/javax/management/NotificationListener.html
+ * 		http://java.sun.com/javase/6/docs/api/java/lang/management/MemoryPoolMXBean.html
+ * 		http://www.theserverside.com/news/thread.tss?thread_id=27481
  * </pre>
- * 
+ *
  */
 /** notify listeners when percentage of available memory is exceeded. */
 public class MemoryMonitor implements Monitor {
@@ -57,11 +58,12 @@ public class MemoryMonitor implements Monitor {
 	};
 	private final Map<String, MemoryPoolMXBean> memoryPoolMap = new HashMap<String, MemoryPoolMXBean>();
 	private Timer watchThresholdtimer = null;
-	private final static Logger log = Logger.getLogger(MemoryMonitor.class);
+	private final static Logger log = LogManager.getLogger();
+
 	private boolean verbose = false;
 	private boolean enabled = false;
 	private long thresholdPollPeriod = 600000L;  //600000msec = 10min
-	
+
 	public static MemoryMonitor getMonitor() {
 		if (memoryMonitor == null) {
 			memoryMonitor = new MemoryMonitor();
@@ -87,7 +89,7 @@ public class MemoryMonitor implements Monitor {
 			}
 		}
 	}
-	
+
 	private void thresholdNotificationWatch(Notification notification) {
 		if ( watchThresholdtimer == null && thresholdPollPeriod > 0 ) {
 			watchThresholdtimer = new Timer();
@@ -127,11 +129,11 @@ public class MemoryMonitor implements Monitor {
 		thresholdPollPeriod  = _thresholdPollPeriod ;
 		log.info("thresholdPollPeriod set to " + thresholdPollPeriod );
 	}
-	
+
 	public long getThresholdPollPeriod () {
 		return thresholdPollPeriod ;
 	}
-	
+
 	public boolean isVerbose() {
 		return verbose;
 	}
@@ -143,7 +145,7 @@ public class MemoryMonitor implements Monitor {
 
 	public void setEnabled( boolean _enabled ) {
 		if ( enabled == _enabled ) { return; }
-		
+
 		if ( _enabled  ) {
 			addNotificationListener( memoryListenerNotificationListener );
 		} else {
@@ -167,7 +169,7 @@ public class MemoryMonitor implements Monitor {
 		}
 		return f;
 	}
-	
+
 	private String getThresholdFormat() {
 		String s = "n/a";
 		for (MemoryPoolMXBean memPool : ManagementFactory.getMemoryPoolMXBeans()) {
@@ -202,15 +204,15 @@ public class MemoryMonitor implements Monitor {
 	}
 	private boolean loadCancelled = false ;
 	private boolean loadRunning = false ;
-	
+
 	public boolean isLoadRunning() { return loadRunning ; }
-	
+
 	public void setLoadRunning ( boolean _setLoadRunning ){
-		if ( _setLoadRunning == loadRunning ) { 
+		if ( _setLoadRunning == loadRunning ) {
 			return;
 		}
-		if ( _setLoadRunning == false ) { 
-			loadCancelled = true ; 
+		if ( _setLoadRunning == false ) {
+			loadCancelled = true ;
 			log.info("stop Load requested");
 			return;
 		}
@@ -219,7 +221,7 @@ public class MemoryMonitor implements Monitor {
 
 		log.info("start Load requested");
 		final Collection<byte[]> data = new ArrayList<byte[]>();
-		
+
 		new Thread() { public void run() {
 			while ( ! loadCancelled && getThreshold() > getUsagePercentMax()  ) {
 				data.add(new byte[1024 * 1024]);
@@ -228,16 +230,16 @@ public class MemoryMonitor implements Monitor {
 					Thread.sleep(200);
 				} catch (InterruptedException exc) {
 					exc.printStackTrace();
-				} 
+				}
 			}
-			
+
 			log.info("stop Load completed");
 			loadCancelled  = false ;
 			loadRunning = false ;
 			}
 		}.start();
 	}
-	
+
 	public void logStats( boolean _verbose ) {
 		logStats( _verbose, "" );
 	}
@@ -253,7 +255,7 @@ public class MemoryMonitor implements Monitor {
 		logStats("");
 	}
 
-	public void logStats(String _preString) { 
+	public void logStats(String _preString) {
 		log.log(Level.INFO, _preString + "\n\n" + getHeapComposite());
 		if (verbose) {
 			for (MemoryPoolMXBean memPool : memoryPoolMap.values()) {
@@ -336,7 +338,7 @@ public class MemoryMonitor implements Monitor {
 		int intP;
 		String strP;
 	}
-	
+
 	private String niceFormat(MemoryPoolMXBean memPool) {
 		String strUsage = memPool.getUsage().toString();
 		Pattern pattern2 = Pattern.compile(" \\d*\\(");
@@ -381,12 +383,12 @@ public class MemoryMonitor implements Monitor {
 
 	private float getUsagePercentMax() {
 		float maxUsage = 0, itemUsage = 0;
-		//MemoryPoolMXBean memPoolUsagePercentMax ; 
+		//MemoryPoolMXBean memPoolUsagePercentMax ;
 		for ( MemoryPoolMXBean memPool : memoryPoolMap.values() ) {
 			if ( memPool.isUsageThresholdSupported() ) {
 				itemUsage = (float) memPool.getUsage().getUsed() / memPool.getUsage().getMax() ;
 				if ( itemUsage > maxUsage ) {
-					maxUsage = itemUsage ; 
+					maxUsage = itemUsage ;
 				}
 			}
 		}
@@ -478,7 +480,7 @@ public class MemoryMonitor implements Monitor {
 		if ( args.length > 0 ) memoryMonitor.setThreshold(Float.parseFloat(args[0]));
 		if ( args.length > 1 ) memoryMonitor.setThresholdPollPeriod(Long.parseLong(args[1]));
 		memoryMonitor.setEnabled( true );
-		
+
 		memoryMonitor.logStats();
 		System.out.println("---");
 		System.out.println(memoryMonitor.getStats());
